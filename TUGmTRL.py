@@ -132,7 +132,8 @@ def solve_quadratic(v1, v2, inx, x_est):
     mininx = np.argmin( abs(x - x_est).sum(axis=1) )
     return x[mininx]
 
-def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f):
+def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f,
+         compensate_repeated_lines, lnorm):
     '''  
     Slines      : 3D array of 2D S-parameters of line measurements (first is set to Thru)
     lengths     : 1D array containing line lengths in same order of measurements
@@ -140,6 +141,11 @@ def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f):
     ereff_est   : Scalar of estimated ereff 
     reflect_est : 1D array of reference reflection coefficients
     f           : Scalar, single frequency point (Hz)
+    compensate_repeated_lines : boolean
+        apply scaling to the line measurements with repeated lengths.
+    lnorm      : int
+        specify the norm-weighting in the eigenvalue problem. Default is 1 (L1 norm).
+        only lnorm = 1 and lnorm = 2 are stable. Higher values are just numerically unstable.
     '''
     #  make sure all inputs have proper shape
     Slines         = np.atleast_3d(Slines).reshape((-1,2,2))
@@ -165,6 +171,16 @@ def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f):
     y_est = 1/z_est
     W_est = (np.outer(y_est,z_est) - np.outer(z_est,y_est)).conj()
     W = -W if abs(W-W_est).sum() > abs(W+W_est).sum() else W # resolve the sign ambiguity
+    
+    # incorporate scaling to the weighting matrix.
+    # Percentage of occurrence for redundant (duplicate) lengths:
+    # e.g., [0, 2, 3, 4, 3] -> [1, 1, 0.5, 1, 0.5]
+    _, inv, counts = np.unique(lengths, return_inverse=True, return_counts=True)
+    q  = 1/counts[inv]
+    S1 = np.outer(q, q) if compensate_repeated_lines else 1
+    S2 = abs(W)**(lnorm-1)
+    S  = S1*S2 # combined scaling to account for both repeated lines and norm-weighting
+    W  = W*S  # new weighting matrix scaled by S.
     
     ## weighted eigenvalue problem
     F = M@W@Dinv@M.T@P@Q

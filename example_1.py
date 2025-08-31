@@ -79,7 +79,8 @@ if __name__ == '__main__':
     reflect_offset = [0]
     
     cal = mTRL(lines=lines, line_lengths=line_lengths, reflect=reflect, 
-               reflect_est=reflect_est, reflect_offset=reflect_offset, ereff_est=5+0j)
+               reflect_est=reflect_est, reflect_offset=reflect_offset, ereff_est=5+0j,
+               lnorm = 1, compensate_repeated_lines=False)
     
     DUT = L6
     # using NIST MultiCal
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
     with PlotSettings(14):
         fig, axs = plt.subplots(2,2, figsize=(10,7))
-        fig.set_dpi(600)
+        fig.set_dpi(150)
         plot_2x2(dut_cal_nist, fig, axs, name='NIST MultiCal', title='Calibrated DUT (Line)')
         plot_2x2(dut_cal_tug, fig, axs, name='TUG mTRL', title='Calibrated DUT (Line)')
         plot_2x2(dut_cal_skrf, fig, axs, name='skrf', title='Calibrated DUT (Line)')
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     f = L1.frequency.f
     with PlotSettings(14):
         fig, axs = plt.subplots(1,2, figsize=(10,3.8))        
-        fig.set_dpi(600)
+        fig.set_dpi(150)
         fig.tight_layout(pad=2)
         ax = axs[0]
         ax.plot(f*1e-9, ereff_mul.real, lw=2, label='NIST MultiCal', 

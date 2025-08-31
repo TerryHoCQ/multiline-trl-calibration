@@ -46,7 +46,8 @@ class mTRL:
     """
     
     def __init__(self, lines, line_lengths, reflect=None, 
-                 reflect_est=[-1], reflect_offset=[0], ereff_est=1+0j, switch_term=None):
+                 reflect_est=[-1], reflect_offset=[0], ereff_est=1+0j, 
+                 switch_term=None, compensate_repeated_lines=False, lnorm=1):
         """
         mTRL initializer.
         
@@ -80,6 +81,15 @@ class mTRL:
             list of 1-port networks. Holds 2 elements:
                 1. network for forward switch term.
                 2. network for reverse switch term.
+            
+        compensate_repeated_lines : boolean
+            apply scaling to the line measurements with repeated lengths.
+            only applies to TUGmTRL algorithm. Default is False.
+        
+        lnorm : int
+            specify the norm-weighting in the eigenvalue problem. Default is 1 (L1 norm).
+            only lnorm = 1 and lnorm = 2 are stable. Higher values are just numerically unstable.
+            only applies to TUGmTRL algorithm. Default is 1.
         """
         
         self.f  = lines[0].frequency.f
@@ -95,6 +105,10 @@ class mTRL:
         else:
             self.switch_term = np.array([self.f*0 for x in range(2)])
         
+        self.compensate_repeated_lines = compensate_repeated_lines
+        self.lnorm = lnorm
+
+
     def run_multical(self):
         # MultiCal
         print('\nMultiCal mTRL in progress:')
@@ -159,13 +173,16 @@ class mTRL:
             Slines = self.Slines[:,inx,:,:]
             Sreflect = self.Sreflect[:,inx,:,:]
             sw = self.switch_term[:,inx]
-            
+            compensate_repeated_lines = self.compensate_repeated_lines
+            lnorm = self.lnorm
+
             # correct switch term
             Slines = [correct_switch_term(x,sw[0],sw[1]) for x in Slines] if np.any(sw) else Slines
             Sreflect = [correct_switch_term(x,sw[0],sw[1]) for x in Sreflect] if np.any(sw) else Sreflect
             
             X, k, ereff0, gamma, _, lambd = TUGmTRL.mTRL(Slines, lengths, Sreflect, ereff0, 
-                                                                    reflect0, reflect_offset, f)
+                                                                    reflect0, reflect_offset, f,
+                                                                    compensate_repeated_lines, lnorm)
             
             Xs.append(X)
             ks.append(k)
