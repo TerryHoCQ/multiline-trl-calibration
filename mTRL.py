@@ -161,6 +161,9 @@ class mTRL:
         Xs      = []
         ks      = []
         lambds  = []
+        kappas  = []
+        lambds_S  = []
+        kappas_S  = []
         
         lengths = self.lengths
         
@@ -180,7 +183,7 @@ class mTRL:
             Slines = [correct_switch_term(x,sw[0],sw[1]) for x in Slines] if np.any(sw) else Slines
             Sreflect = [correct_switch_term(x,sw[0],sw[1]) for x in Sreflect] if np.any(sw) else Sreflect
             
-            X, k, ereff0, gamma, _, lambd = TUGmTRL.mTRL(Slines, lengths, Sreflect, ereff0, 
+            X, k, ereff0, gamma, _, lambd, kappa, lambd_S, kappa_S = TUGmTRL.mTRL(Slines, lengths, Sreflect, ereff0, 
                                                                     reflect0, reflect_offset, f,
                                                                     compensate_repeated_lines, lnorm)
             
@@ -188,6 +191,10 @@ class mTRL:
             ks.append(k)
             gammas.append(gamma)
             lambds.append(lambd)
+            kappas.append(kappa)
+            lambds_S.append(lambd_S)
+            kappas_S.append(kappa_S)
+
             print(f'Frequency: {(f*1e-9).round(4)} GHz done!', end='\r', flush=True)
             
         self.X = np.array(Xs)
@@ -195,6 +202,9 @@ class mTRL:
         self.gamma = np.array(gammas)
         self.ereff = -(c0/2/np.pi/self.f*self.gamma)**2
         self.lambd = np.array(lambds)
+        self.kappa = np.array(kappas)
+        self.lambd_S = np.array(lambds_S)
+        self.kappa_S = np.array(kappas_S)
         self.error_coef()  # compute the 12 error terms
         
     def apply_cal(self, NW, left=True):

@@ -163,6 +163,7 @@ def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f,
     ## Compute W via Takagi decomposition (also the eigenvalue lambda is computed)
     G, lambd = compute_G_with_takagi(Dinv@M.T@P@Q@M)
     W = (G@np.array([[0,1j],[-1j,0]])@G.T).conj()
+    kappa = 2*lambd/abs(W).sum() # this is the normalized eigenvalue without scaling
 
     gamma_est = 2*np.pi*f/c0*np.sqrt(-ereff_est)
     gamma_est = abs(gamma_est.real) + 1j*abs(gamma_est.imag)  # this to avoid sign inconsistencies 
@@ -180,11 +181,14 @@ def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f,
     S1 = np.outer(q, q) if compensate_repeated_lines else 1
     S2 = abs(W)**(lnorm-1)
     S  = S1*S2 # combined scaling to account for both repeated lines and norm-weighting
-    W  = W*S  # new weighting matrix scaled by S.
+    WS  = W*S  # new weighting matrix scaled by S.
     
+    lambd_S = (0.5*WS.conj()*W).sum()  # this is the eigenvalue of the weighted eigenvalue problem
+    kappa_S = 2*lambd_S/abs(WS).sum()  # this is the normalized eigenvalue of the weighted eigenvalue problem
+
     ## weighted eigenvalue problem
-    F = M@W@Dinv@M.T@P@Q
-    eigval, eigvec = np.linalg.eig(F+lambd*np.eye(4))
+    F = M@WS@Dinv@M.T@P@Q
+    eigval, eigvec = np.linalg.eig(F+lambd_S*np.eye(4))
     inx = np.argsort(abs(eigval))
     v1 = eigvec[:,inx[0]]
     v2 = eigvec[:,inx[1]]
@@ -243,6 +247,6 @@ def mTRL(Slines, lengths, Sreflect, ereff_est, reflect_est, reflect_offset, f,
 
     X  = X_@np.diag([a11b11, b11, a11, 1]) # build the calibration matrix (de-normalize)
 
-    return X, k, ereff, gamma, reflect_est, lambd
+    return X, k, ereff, gamma, reflect_est, lambd, kappa, lambd_S, kappa_S
 
 # EOF
