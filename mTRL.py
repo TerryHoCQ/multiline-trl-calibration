@@ -152,7 +152,7 @@ class mTRL:
         self.ereff = -(c0/2/np.pi/self.f*self.gamma)**2
         self.error_coef()
         
-    def run_tug(self):
+    def run_tug(self, recursive_reflect=False):
         # TUG mTRL
         print('\nTUG mTRL in progress:')
         
@@ -183,9 +183,11 @@ class mTRL:
             Slines = [correct_switch_term(x,sw[0],sw[1]) for x in Slines] if np.any(sw) else Slines
             Sreflect = [correct_switch_term(x,sw[0],sw[1]) for x in Sreflect] if np.any(sw) else Sreflect
             
-            X, k, ereff0, gamma, _, lambd, kappa, lambd_S, kappa_S = TUGmTRL.mTRL(Slines, lengths, Sreflect, ereff0, 
+            X, k, ereff0, gamma, reflect0_cal, lambd, kappa, lambd_S, kappa_S = TUGmTRL.mTRL(Slines, lengths, Sreflect, ereff0, 
                                                                     reflect0, reflect_offset, f,
                                                                     compensate_repeated_lines, lnorm)
+            if recursive_reflect:
+                reflect0 = reflect0_cal
             
             Xs.append(X)
             ks.append(k)
